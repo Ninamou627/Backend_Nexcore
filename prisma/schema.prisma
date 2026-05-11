@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum pour les rôles d'utilisateur
+enum Role {
+  CLIENT
+  EXPERT
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  role           Role      @default(CLIENT)
+  company        String?
+  avatar         String?
+  description    String?
+  location       String?
+  experience     String?
+  skills         String[]
+  portfolio      Json?
+  proposals      Proposal[]
+  messages       Message[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  clientProjects Project[] @relation("ClientProjects")
+  expertProjects Project[] @relation("ExpertProjects")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  budget      String?
+  timeline    String?
+  techStack   String[]
+  status      String   @default("matching") // matching, in_progress, review, completed
+  clientId    String
+  client      User     @relation("ClientProjects", fields: [clientId], references: [id])
+  expertId    String?
+  expert      User?    @relation("ExpertProjects", fields: [expertId], references: [id])
+  proposals   Proposal[]
+  milestones  Milestone[]
+  messages    Message[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Proposal {
+  id             String   @id @default(uuid())
+  approach       String
+  methodology    String
+  experience     String?
+  proposedPrice  String
+  timeline       String
+  status         String   @default("pending") // pending, accepted, rejected
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  expertId       String
+  expert         User     @relation(fields: [expertId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("pending") // pending, in_progress, completed
+  dueDate     DateTime?
+  amount      Float?
+  deliverables String[]
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  senderId    String
+  sender      User     @relation(fields: [senderId], references: [id])
+  createdAt   DateTime @default(now())
+}
