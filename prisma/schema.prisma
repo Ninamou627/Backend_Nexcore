@@ -27,12 +27,17 @@ model User {
   experience     String?
   skills         String[]
   portfolio      Json?
+  isVerified         Boolean   @default(false)
+  twoFactorSecret    String?
+  isTwoFactorEnabled Boolean   @default(false)
   proposals      Proposal[]
   messages       Message[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   clientProjects Project[] @relation("ClientProjects")
   expertProjects Project[] @relation("ExpertProjects")
+  files          File[]
+  audits         Audit[]   @relation("ExpertAudits")
 }
 
 model Project {
@@ -41,8 +46,9 @@ model Project {
   description String
   budget      String?
   timeline    String?
-  techStack   String[]
-  status      String   @default("matching") // matching, in_progress, review, completed
+  techStack      String[]
+  githubRepoUrl  String?
+  status         String   @default("matching") // matching, in_progress, review, completed
   clientId    String
   client      User     @relation("ClientProjects", fields: [clientId], references: [id])
   expertId    String?
@@ -50,6 +56,8 @@ model Project {
   proposals   Proposal[]
   milestones  Milestone[]
   messages    Message[]
+  files       File[]
+  audits      Audit[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -92,4 +100,34 @@ model Message {
   senderId    String
   sender      User     @relation(fields: [senderId], references: [id])
   createdAt   DateTime @default(now())
+}
+
+model File {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  size        String
+  path        String
+  category    String?
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  uploaderId  String
+  uploader    User     @relation(fields: [uploaderId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Audit {
+  id              String   @id @default(uuid())
+  securityScore   Int
+  qualityScore    Int
+  conformityScore Int
+  status          String   @default("PENDING") // PENDING, PASSED, FAILED
+  aiReport        String   @db.Text
+  expertComments  String?  @db.Text
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id])
+  expertId        String
+  expert          User     @relation("ExpertAudits", fields: [expertId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

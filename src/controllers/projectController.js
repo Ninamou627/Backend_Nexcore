@@ -36,11 +36,21 @@ const getMyProjects = async (req, res) => {
     if (role === 'CLIENT') {
       projects = await prisma.project.findMany({
         where: { clientId: userId },
+        include: {
+          _count: {
+            select: { proposals: true }
+          }
+        },
         orderBy: { createdAt: 'desc' }
       });
     } else if (role === 'EXPERT') {
       projects = await prisma.project.findMany({
         where: { expertId: userId },
+        include: {
+          _count: {
+            select: { proposals: true }
+          }
+        },
         orderBy: { createdAt: 'desc' }
       });
     }
@@ -241,6 +251,43 @@ const getProjectDetails = async (req, res) => {
   }
 };
 
+const updateProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, githubRepoUrl } = req.body;
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    const project = await prisma.project.findUnique({ where: { id } });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Projet non trouvé.' });
+    }
+
+    if (role === 'CLIENT' && project.clientId !== userId) {
+      return res.status(403).json({ message: 'Accès refusé.' });
+    }
+    if (role === 'EXPERT' && project.expertId !== userId) {
+      return res.status(403).json({ message: 'Accès refusé.' });
+    }
+
+    // Préparer les données à mettre à jour
+    const dataToUpdate = {};
+    if (status !== undefined) dataToUpdate.status = status;
+    if (githubRepoUrl !== undefined) dataToUpdate.githubRepoUrl = githubRepoUrl;
+
+    const updatedProject = await prisma.project.update({
+      where: { id },
+      data: dataToUpdate
+    });
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de la mise à jour du projet.' });
+  }
+};
+
 const aiService = require('../services/aiService'); // Force reload controller
 
 const analyzeProposals = async (req, res) => {
@@ -420,5 +467,6 @@ module.exports = {
   createMilestone,
   updateMilestone,
   deleteMilestone,
-  generateProjectMilestones
+  generateProjectMilestones,
+  updateProject
 };
