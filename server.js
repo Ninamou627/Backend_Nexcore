@@ -14,8 +14,9 @@ const server = http.createServer(app);
 // Configurer Socket.IO pour le temps réel (Messagerie)
 const io = new Server(server, {
   cors: {
-    origin: '*', // En production, on mettra l'URL exacte du frontend
-    methods: ['GET', 'POST']
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
