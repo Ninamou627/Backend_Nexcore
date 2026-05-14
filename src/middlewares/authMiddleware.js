@@ -8,10 +8,6 @@ const protect = (req, res, next) => {
     token = req.cookies.token;
   } 
   
-  console.log(`[AuthMiddleware] Path: ${req.path}`);
-  console.log(`[AuthMiddleware] Token from cookie: ${token ? 'Present' : 'Missing'}`);
-  console.log(`[AuthMiddleware] Auth header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
-
   // Fallback to headers (for backward compatibility during migration)
   if (!token && 
     req.headers.authorization &&
